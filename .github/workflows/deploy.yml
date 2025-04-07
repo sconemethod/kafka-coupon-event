@@ -1,35 +1,49 @@
-- name: Set up SSH
-  run: |
-    mkdir -p ~/.ssh
-    echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-    chmod 600 ~/.ssh/id_rsa
+name: Deploy App
 
-- name: 🏗️ Create remote directory
-  run: |
-    ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
-      mkdir -p /home/ubuntu/app
-    "
+on:
+  push:
+    branches: [ "main" ]
 
-- name: 🗂️ Copy necessary files to EC2
-  run: |
-    scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r \
-      docker-compose.yml \
-      Dockerfile \
-      plugins \
-      register-mysql-sink.json \
-      ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-- name: 🔐 Write .env on EC2
-  run: |
-    ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
-      echo '${{ secrets.ENV_FILE }}' > /home/ubuntu/app/.env
-    "
+    steps:
+      - name: 🧾 Checkout code
+        uses: actions/checkout@v3
 
-- name: 🐳 Docker Compose Up
-  run: |
-    ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
-      cd /home/ubuntu/app &&
-      docker-compose down &&
-      docker-compose up -d --build
-    "
+      - name: 🔑 Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: 🏗️ Create remote directory
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
+            mkdir -p /home/ubuntu/app
+          "
+
+      - name: 🗂️ Copy necessary files to EC2
+        run: |
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r \
+            docker-compose.yml \
+            Dockerfile \
+            plugins \
+            register-mysql-sink.json \
+            ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/
+
+      - name: 🔐 Write .env on EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
+            echo '${{ secrets.ENV_FILE }}' > /home/ubuntu/app/.env
+          "
+
+      - name: 🐳 Docker Compose Up
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
+            cd /home/ubuntu/app &&
+            docker-compose down &&
+            docker-compose up -d --build
+          "
 
