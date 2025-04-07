@@ -23,11 +23,11 @@ jobs:
 
       - name: 📁 Copy files to EC2
         run: |
-          scp -o StrictHostKeyChecking=no -r . ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app/
+          scp -o StrictHostKeyChecking=no -r .${{ secrets.EC2_HOST }}:/home/ec2-user/app/
 
       - name: 🐳 Docker Compose Up
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_HOST }} "
             cd /home/ec2-user/app &&
             docker-compose down &&
             docker-compose up -d --build
