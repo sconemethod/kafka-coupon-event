@@ -22,8 +22,6 @@ terraform.tfvars
 
 # macOS 시스템 파일
 .DS_Store
-awscliv2.zip
-terraform/.terraform/
 
 # 대용량
 *.zip
