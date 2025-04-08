@@ -17,7 +17,7 @@ jobs:
       - name: 📦 Zip deployment package
         run: |
           mkdir bundle
-          cp -r appspec.yml kafka-coupon/ scripts/ bundle/
+          cp -r appspec.yml  scripts/ bundle/
           cd bundle
           zip -r ../kafka-coupon-deploy.zip .
 
