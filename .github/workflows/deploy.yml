@@ -1,49 +1,44 @@
-name: Deploy App
+name: 🚀 Deploy to EC2 via CodeDeploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   deploy:
+    name: Upload and Deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧾 Checkout code
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: 🔑 Set up SSH
+      - name: 📦 Zip deployment package
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          zip -r kafka-coupon-deploy.zip appspec.yml scripts/ kafka-coupon/
 
-      - name: 🏗️ Create remote directory
+      - name: ☁️ Upload to S3
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
-            mkdir -p /home/ubuntu/app
-          "
+          aws s3 cp kafka-coupon-deploy.zip s3://$S3_BUCKET_NAME/
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
 
-      - name: 🗂️ Copy necessary files to EC2
+      - name: 🚀 Deploy to CodeDeploy
         run: |
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r \
-            docker-compose.yml \
-            Dockerfile \
-            plugins \
-            register-mysql-sink.json \
-            ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/app/
-
-      - name: 🔐 Write .env on EC2
-        run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
-            echo '${{ secrets.ENV_FILE }}' > /home/ubuntu/app/.env
-          "
-
-      - name: 🐳 Docker Compose Up
-        run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
-            cd /home/ubuntu/app &&
-            docker-compose down &&
-            docker-compose up -d --build
-          "
+          aws deploy create-deployment \
+            --application-name $CODEDEPLOY_APP_NAME \
+            --deployment-group-name $CODEDEPLOY_GROUP_NAME \
+            --s3-location bucket=$S3_BUCKET_NAME,bundleType=zip,key=kafka-coupon-deploy.zip \
+            --file-exists-behavior OVERWRITE
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          CODEDEPLOY_APP_NAME: ${{ secrets.CODEDEPLOY_APP_NAME }}
+          CODEDEPLOY_GROUP_NAME: ${{ secrets.CODEDEPLOY_GROUP_NAME }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
 
