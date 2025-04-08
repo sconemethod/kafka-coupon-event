@@ -1,0 +1,35 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+kafka-connect-plugins/kafka-connect-plugins/.env
+
+
+# AWS CLI installer
+awscliv2.zip
+
+# Terraform generated files
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+terraform.tfvars
+
+# Local dev logs
+*.log
+
+# macOS 시스템 파일
+.DS_Store
+awscliv2.zip
+terraform/.terraform/
+
+# 대용량
+*.zip
+*.jar
+
+# IDE
+.vscode/
+.idea/
+
