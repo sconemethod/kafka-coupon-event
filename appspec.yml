@@ -10,3 +10,8 @@ hooks:
     - location: scripts/deploy.sh
       timeout: 300
       runas: ubuntu
+
+    - location: scripts/start-kafka.sh
+      timeout: 300
+      runas: ubuntu
+        
