@@ -1,9 +1,9 @@
 {
-  "name": "mysql-sink-connector",
+  "name": "mysql-sink-issued",
   "config": {
     "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
     "tasks.max": "1",
-    "topics": "coupon-events", 
+    "topics": "coupon-issued",
 
     "connection.url": "jdbc:mysql://mysql:3306/coupon",
     "connection.user": "root",
@@ -11,6 +11,7 @@
 
     "insert.mode": "insert",
     "auto.create": "true",
+    "auto.evolve": "true",
 
     "key.converter": "io.confluent.connect.avro.AvroConverter",
     "value.converter": "io.confluent.connect.avro.AvroConverter",
@@ -19,4 +20,3 @@
     "value.converter.schema.registry.url": "http://schema-registry:8081"
   }
 }
-
