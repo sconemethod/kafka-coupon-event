@@ -1,0 +1,5 @@
+{
+  "subject": "user-login-value",
+  "version": 1,
+  "schema": "{\"type\":\"record\",\"name\":\"UserLogin\",\"namespace\":\"com.coupon.avro\",\"fields\":[{\"name\":\"user_id\",\"type\":\"string\"},{\"name\":\"username\",\"type\":\"string\"},{\"name\":\"email\",\"type\":\"string\"}]}"
+}

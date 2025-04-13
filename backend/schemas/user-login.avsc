@@ -1,0 +1,10 @@
+{
+  "type": "record",
+  "name": "UserLogin",
+  "namespace": "com.coupon.avro",
+  "fields": [
+    { "name": "user_id", "type": "int" },
+    { "name": "username", "type": "string" },
+    { "name": "email", "type": "string" }
+  ]
+}

@@ -1,17 +1,9 @@
 {
-  "name": "kafka-coupon",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "kafkajs": "^2.2.4",
-    "mysql2": "^3.14.0"
+    "@kafkajs/confluent-schema-registry": "^3.8.0",
+    "uuid": "^11.1.0"
   },
-  "devDependencies": {},
-  "description": ""
+  "devDependencies": {
+    "@types/uuid": "^10.0.0"
+  }
 }

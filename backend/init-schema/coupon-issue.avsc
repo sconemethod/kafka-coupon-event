@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "CouponIssue",
+  "namespace": "com.example",
+  "fields": [
+    {
+      "name": "user_id",
+      "type": "string"
+    },
+    {
+      "name": "coupon_id",
+      "type": "string"
+    },
+    {
+      "name": "issued_at",
+      "type": "string"
+    }
+  ]
+} 

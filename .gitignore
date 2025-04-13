@@ -1,6 +1,11 @@
 # Node modules
 node_modules/
 
+# Envsubst로 생성된 파일들
+kafka-connect-plugins/kafka-connect-plugins/init-connector/user-login-sink.processed.json
+kafka-connect-plugins/kafka-connect-plugins/init-connector/coupon-issue-sink.processed.json
+kafka-connect-plugins/kafka-connect-plugins/init-connector/coupon-user-sink.processed.json
+
 # Environment variables
 .env
 

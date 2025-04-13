@@ -1,0 +1,47 @@
+{
+  "name": "kafka-coupon",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "nodemon src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@kafkajs/confluent-schema-registry": "^3.8.0",
+    "@types/ioredis": "^5.0.0",
+    "@types/winston": "^2.4.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "express-list-endpoints": "^7.1.1",
+    "ioredis": "^5.6.1",
+    "kafkajs": "^2.2.4",
+    "mysql2": "^3.14.0",
+    "redis": "^4.7.0",
+    "winston": "^3.17.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sconemethod/kafka-coupon-event.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sconemethod/kafka-coupon-event/issues"
+  },
+  "homepage": "https://github.com/sconemethod/kafka-coupon-event#readme",
+  "description": "",
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.3",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.14.0",
+    "@types/uuid": "^10.0.0",
+    "nodemon": "^3.1.9",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.8.3"
+  }
+}

@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   zookeeper:
+    container_name: zookeeper
     image: confluentinc/cp-zookeeper:latest
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -10,23 +11,28 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:latest
+    container_name: kafka
     depends_on:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://0.0.0.0:29092
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://kafka:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
       - "9092:9092"
-      - "29092:29092"  # ✅ 추가: 외부 접속용
-
+      - "29092:29092"
+    networks:
+      default:
+        aliases:
+          - kafka
 
   mysql:
     image: mysql:8
+    container_name: mysql
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
@@ -34,9 +40,34 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+     
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.0
+    container_name: schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+    networks:
+      default:
+        aliases:
+          - schema-registry
+
+  redis:
+    container_name: redis
+    image: redis:6.2
+    ports:
+      - "6379:6379"
 
   kafka-connect:
-    #    image: my-kafka-connect:latest
+    container_name: kafka-connect
     build:
       context: .
       dockerfile: Dockerfile
@@ -46,47 +77,119 @@ services:
       - schema-registry
     ports:
       - "8083:8083"
-        #volumes:
-        #  - ./plugins:/usr/share/confluent-hub-components  # ✅ plugin path 일치시킴    
-        #  - ./plugins:/usr/share/java
     environment:
       CONNECT_BOOTSTRAP_SERVERS: kafka:9092
-        # CONNECT_REST_ADVERTISED_HOST_NAME: ${KAFKA_ADVERTISED_LISTENER}
       CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
       CONNECT_GROUP_ID: kafka-connect-group
       CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
       CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
       CONNECT_STATUS_STORAGE_TOPIC: _connect-status
-
-      # 내부 전용 json 컨버터
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
-
-      # 외부용 Avro 컨버터 설정
       CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      
       CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
       CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
-        #CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
-        #CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
-        #CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
-        #CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
 
-  schema-registry:
-    image: confluentinc/cp-schema-registry:7.5.0
+  backend:
+    container_name: backend
+    build:
+      context: ../../backend
+    ports:
+      - "4000:4000"
     depends_on:
       - kafka
-    ports:
-      - "8081:8081"
+      - kafka-connect
+      - mysql
+      - redis
+      - schema-registry    # ← 추가: 백엔드가 Schema Registry에 의존
     environment:
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - MYSQL_HOST=mysql
+      - KAFKA_BROKER=kafka:9092
+      - SCHEMA_REGISTRY_URL=http://schema-registry:8081
+#    extra_hosts:
+#      - "schema-registry:192.168.64.6"
+#      - "kafka:192.168.64.5"
+#  frontend:
+#    container_name: frontend
+#    build: ../../frontend
+#    ports:
+#      - "3001:3001"
+#    depends_on:
+#      - backend
+#    environment:
+#      - REACT_APP_API_URL=http://3.39.86.157:4000      
 
-        
+  frontend-dev:
+    container_name: frontend-dev
+    build:
+      context: ../../frontend               # ✅ 실제 프론트 경로
+      dockerfile: Dockerfile.dev           # ✅ 개발용 도커파일
+    volumes:
+      - ../../frontend:/app                # ✅ 실시간 코드 반영
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "3000:3001"  # 개발 환경에서는 3000으로 접근
+    environment:
+      - PORT=3001
+      - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_API_URL=http://3.39.86.157:4000 # 외부 백엔드 접근 절대 backend:4000 안 됨. 이건 도커내부끼리 통신 대신 3.39.86.157:4000 사용
+    depends_on:
+      - backend
+
+
+  init-schema:
+    container_name: init-schema
+    image: curlimages/curl:latest
+    depends_on:
+      - schema-registry
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "echo '🍼 스키마 등록 중...' &&
+      until curl -s http://schema-registry:8081/subjects; do echo '⏳ 대기 중...'; sleep 2; done &&
+      curl -X POST http://schema-registry:8081/subjects/coupon-issue-value/versions \
+        -H 'Content-Type: application/vnd.schemaregistry.v1+json' \
+        --data @/schema/coupon-issue.json &&
+      curl -X POST http://schema-registry:8081/subjects/user-login-value/versions \
+        -H 'Content-Type: application/vnd.schemaregistry.v1+json' \
+        --data @/schema/user-login.json &&
+      echo '✅ 모든 스키마 등록 완료!'"
+    volumes:
+      - ./init-schema:/schema
+  init-connector:
+    container_name: init-connector
+    image: curlimages/curl:latest
+    depends_on:
+      - kafka-connect
+    entrypoint: ["/bin/sh", "-c", "/connectors/entrypoint.sh"]
+    command: |
+      "echo '🔌 커넥터 등록 중...' &&
+      until curl -s http://kafka-connect:8083/connectors; do echo '⏳ Kafka Connect 대기 중...'; sleep 2; done &&
+      curl -X POST http://kafka-connect:8083/connectors \
+        -H 'Content-Type: application/json' \
+        --data @/connectors/coupon-issue-sink.json &&
+      curl -X POST http://kafka-connect:8083/connectors \
+        -H 'Content-Type: application/json' \
+        --data @/connectors/user-login-sink.json &&
+      echo '✅ 모든 커넥터 등록 완료!'"
+    volumes:
+      - ./init-connector:/connectors
+
+      
+volumes:
+  schema_data:
+  frontend-node-modules:
+  mysql_data: 
+
+networks:
+  default:
+    name: kafka-connect-plugins_default
