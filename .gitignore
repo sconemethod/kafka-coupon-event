@@ -31,6 +31,20 @@ terraform.tfvars
 # 대용량
 *.zip
 *.jar
+*.tar
+*.gz
+*.whl
+*.whl.part
+*.whl.part.tmp
+*.whl.part.tmp.tmp
+*.whl.part.tmp.tmp.tmp
+*.whl.part.tmp.tmp.tmp.tmp
+*.whl.part.tmp.tmp.tmp.tmp.tmp
+*.whl.part.tmp.tmp.tmp.tmp.tmp.tmp
+*.whl.part.tmp.tmp.tmp.tmp.tmp.tmp.tmp
+*.whl.part.tmp.tmp.tmp.tmp.tmp.tmp.tmp.tmp
+*.whl.part.tmp.tmp.tmp.tmp.tmp.tmp.tmp.tmp.tmp
+*.whl.part.tmp.tmp.tmp.tmp.tmp.tmp.tmp.tmp.tmp.tmp  
 
 # IDE
 .vscode/
